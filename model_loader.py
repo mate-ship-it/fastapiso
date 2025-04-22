@@ -1,6 +1,7 @@
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
 import torch
-import torchaudio
+from pydub import AudioSegment
+import numpy as np
 
 def load_model():
     print("Loading Somali ASR model...")
@@ -10,14 +11,11 @@ def load_model():
     return processor, model
 
 def transcribe_audio(path, processor, model):
-    speech_array, sampling_rate = torchaudio.load(path)
+    audio = AudioSegment.from_file(path)
+    audio = audio.set_frame_rate(16000).set_channels(1)
+    samples = np.array(audio.get_array_of_samples()).astype(np.float32) / 32768.0  # normalize
 
-    # Resample if necessary
-    if sampling_rate != 16000:
-        resampler = torchaudio.transforms.Resample(orig_freq=sampling_rate, new_freq=16000)
-        speech_array = resampler(speech_array)
-
-    input_values = processor(speech_array[0], sampling_rate=16000, return_tensors="pt").input_values
+    input_values = processor(samples, sampling_rate=16000, return_tensors="pt").input_values
 
     with torch.no_grad():
         logits = model(input_values).logits
