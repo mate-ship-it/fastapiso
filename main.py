@@ -1,7 +1,9 @@
 from fastapi import FastAPI, File, UploadFile
 from model_loader import load_model, transcribe_audio
 from utils import convert_ogg_to_wav
+from fastapi.responses import JSONResponse
 import tempfile
+import os
 
 app = FastAPI()
 
@@ -10,15 +12,23 @@ processor, model = load_model()
 
 @app.post("/transcribe")
 async def transcribe(file: UploadFile = File(...)):
-    # Save the uploaded OGG/MP3 file
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".ogg") as tmp:
-        tmp.write(await file.read())
-        tmp_path = tmp.name
+    try:
+        # Save the uploaded OGG file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".ogg") as tmp:
+            tmp.write(await file.read())
+            tmp_path = tmp.name
 
-    # Convert OGG to WAV
-    wav_path = convert_ogg_to_wav(tmp_path)
+        # Convert OGG to WAV
+        wav_path = convert_ogg_to_wav(tmp_path)
 
-    # Transcribe the audio
-    transcription = transcribe_audio(wav_path, processor, model)
+        # Transcribe the audio
+        transcription = transcribe_audio(wav_path, processor, model)
 
-    return {"transcription": transcription}
+        # Cleanup temp files
+        os.remove(tmp_path)
+        os.remove(wav_path)
+
+        return {"transcription": transcription}
+
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
