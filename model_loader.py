@@ -1,3 +1,4 @@
+import os
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
 import torch
 from pydub import AudioSegment
@@ -5,8 +6,12 @@ import numpy as np
 
 def load_model():
     print("Loading Somali ASR model...")
-    processor = Wav2Vec2Processor.from_pretrained("Mustafaa4a/ASR-Somali")
-    model = Wav2Vec2ForCTC.from_pretrained("Mustafaa4a/ASR-Somali")
+
+    hf_token = os.getenv("HUGGINGFACE_API_TOKEN")  # Fetch from environment variables
+
+    processor = Wav2Vec2Processor.from_pretrained("Mustafaa4a/ASR-Somali", use_auth_token=hf_token)
+    model = Wav2Vec2ForCTC.from_pretrained("Mustafaa4a/ASR-Somali", use_auth_token=hf_token)
+
     model.eval()
     return processor, model
 
