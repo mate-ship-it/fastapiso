@@ -7,3 +7,4 @@ pydub
 ffmpeg-python
 httpx
 numpy<2
+python-multipart
